@@ -1,3 +1,34 @@
+<?php
+error_reporting(E_ALL);
+include("connection.php"); // Include the database connection file
+
+$message = ""; // Initialize a message variable
+$messageClass = "";
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $name = $_POST["name"];
+    $email = $_POST["email"];
+    $password = $_POST["password"];
+
+    // Hash the password
+    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+    // Use a prepared statement to insert data
+    $stmt = $conn->prepare("INSERT INTO user (name, email, password) VALUES (?, ?, ?)");
+    $stmt->bind_param("sss", $name, $email, $hashedPassword);
+
+    if ($stmt->execute()) {
+        $message = "Registration successful!";
+        $messageClass = "success"; 
+    } else {
+        $message = "Error: " . $stmt->error;
+        $messageClass = "error"; 
+    }
+
+    $stmt->close();
+    $conn->close();
+}
+?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -50,6 +81,10 @@
             background-color: #555;
         }
 
+        .success {
+            color: green;
+        }
+
         .error {
             color: red;
         }
@@ -57,8 +92,10 @@
 </head>
 <body>
     <div class="container">
-        <h2>Signup Form</h2>
-        <form action="#" method="post">
+    <h2>Signup Form</h2>
+     <p class="<?php echo $messageClass; ?>"><?php echo $message; ?></p> <!-- Display the success or error message -->
+
+        <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
             <div class="input-group">
                 <label for="name">Name:</label>
                 <input type="text" id="name" name="name" required>
@@ -70,10 +107,6 @@
             <div class="input-group">
                 <label for="password">Password:</label>
                 <input type="password" id="password" name="password" required>
-            </div>
-            <div class="input-group">
-                <label for="confirm_password">Confirm Password:</label>
-                <input type="password" id="confirm_password" name="confirm_password" required>
             </div>
             <div class="input-group">
                 <input type="submit" value="Sign Up">
